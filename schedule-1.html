@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schedule">
+<title>Schedule</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:#0a0a0f;color:#e0e0e0;font-family:'Space Mono','Courier New',monospace;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:90px}
+  button{cursor:pointer;font-family:inherit}
+  input{font-family:inherit}
+  ::-webkit-scrollbar{display:none}
+
+  .header{padding:24px 20px 16px;border-bottom:1px solid #1a1a2e;background:linear-gradient(180deg,#0d0d1a,#0a0a0f)}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .subtitle{font-size:11px;color:#666;letter-spacing:3px;text-transform:uppercase}
+  .title{font-size:22px;font-weight:700;margin-top:4px;color:#fff}
+  .streak-box{background:#00ff9d15;border:1px solid #00ff9d40;border-radius:12px;padding:8px 14px;text-align:center}
+  .streak-num{font-size:20px;font-weight:700;color:#00ff9d}
+  .streak-label{font-size:9px;color:#666;letter-spacing:2px}
+  .progress-row{display:flex;justify-content:space-between;margin-bottom:6px;font-size:11px;color:#666}
+  .progress-row span:last-child{color:#00ff9d}
+  .progress-track{height:4px;background:#1a1a2e;border-radius:2px;overflow:hidden;margin-top:14px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#00ff9d,#00b4ff);border-radius:2px;transition:width .5s ease}
+
+  .days-strip{display:flex;padding:12px 16px;gap:6px;overflow-x:auto;border-bottom:1px solid #1a1a2e}
+  .day-btn{flex:0 0 auto;width:48px;padding:8px 0;border-radius:10px;border:1px solid #1a1a2e;background:transparent;color:#555;font-size:11px;letter-spacing:1px;transition:all .2s}
+  .day-btn.active{border-color:#00ff9d;background:#00ff9d15;color:#00ff9d}
+  .day-btn.today-btn{color:#fff}
+  .day-dot{width:24px;height:2px;background:#1a1a2e;border-radius:1px;margin:5px auto 0}
+  .day-dot.has-progress{background:#00ff9d}
+
+  .tasks{padding:16px 20px}
+  .task-item{display:flex;align-items:center;gap:14px;margin-bottom:10px;padding:12px 14px;border-radius:12px;border:1px solid #1a1a2e;background:#0d0d1a;transition:all .2s;position:relative}
+  .task-item.current{border-color:var(--cat-color)}
+  .task-item.done{opacity:.5}
+  .now-badge{position:absolute;top:-1px;left:14px;font-size:9px;padding:1px 6px;border-radius:0 0 4px 4px;font-weight:700;letter-spacing:1px;color:#000}
+  .check-btn{width:22px;height:22px;border-radius:6px;border:2px solid #333;background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+  .check-btn.checked{border-color:var(--cat-color);background:var(--cat-color)}
+  .check-icon{color:#000;font-size:12px;font-weight:900;display:none}
+  .check-btn.checked .check-icon{display:block}
+  .task-label{font-size:14px;font-weight:600;color:#e0e0e0}
+  .task-item.done .task-label{text-decoration:line-through;color:#555}
+  .task-time{font-size:11px;color:#555;margin-top:2px}
+  .cat-badge{font-size:10px;border-radius:6px;padding:2px 7px;letter-spacing:1px;border:1px solid var(--cat-color);color:var(--cat-color);white-space:nowrap}
+  .del-btn{background:none;border:none;color:#333;font-size:18px;padding:0 2px;line-height:1}
+
+  .add-form{padding:16px;border-radius:12px;border:1px solid #00ff9d40;background:#00ff9d08;margin-top:8px}
+  .add-form input{width:100%;padding:8px 10px;background:#0a0a0f;border:1px solid #1a1a2e;border-radius:8px;color:#e0e0e0;font-size:13px;margin-bottom:10px}
+  .cat-row{display:flex;gap:8px;margin-bottom:12px}
+  .cat-btn{flex:1;padding:6px 0;border-radius:8px;border:1px solid #1a1a2e;background:transparent;color:#555;font-size:11px;letter-spacing:1px;transition:all .2s}
+  .cat-btn.selected{border-color:var(--cat-color);background:var(--cat-color-bg);color:var(--cat-color)}
+  .form-btns{display:flex;gap:8px}
+  .add-confirm{flex:1;padding:10px;background:#00ff9d;border:none;border-radius:8px;color:#000;font-weight:700;font-size:13px}
+  .add-cancel{flex:1;padding:10px;background:transparent;border:1px solid #1a1a2e;border-radius:8px;color:#666;font-size:13px}
+  .add-trigger{width:100%;padding:12px;background:transparent;border:1px dashed #1a1a2e;border-radius:12px;color:#444;font-size:13px;margin-top:8px;letter-spacing:2px}
+
+  .week-section{padding:0 20px;margin-top:16px}
+  .section-label{font-size:11px;color:#444;letter-spacing:3px;margin-bottom:12px}
+  .week-bars{display:flex;gap:6px}
+  .week-col{flex:1;text-align:center;cursor:pointer}
+  .week-bar{height:60px;background:#0d0d1a;border-radius:6px;overflow:hidden;position:relative;border:1px solid #1a1a2e;transition:border-color .2s}
+  .week-col.active .week-bar{border-color:#00ff9d40}
+  .week-fill{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,#00ff9d40,#00ff9d20);transition:height .5s ease}
+  .week-pct{position:absolute;bottom:4px;left:0;right:0;font-size:9px;color:#00ff9d;font-weight:700}
+  .week-day-label{font-size:9px;color:#444;margin-top:4px;letter-spacing:1px;transition:color .2s}
+  .week-col.active .week-day-label{color:#00ff9d}
+
+  .alarm-section{padding:16px 20px 0}
+  .alarm-toggle{width:100%;padding:12px;background:#0d0d1a;border:1px solid #1a1a2e;border-radius:12px;color:#666;font-size:12px;letter-spacing:2px;display:flex;align-items:center;justify-content:space-between}
+  .alarm-toggle.on{border-color:#00ff9d40;color:#00ff9d}
+  .toggle-dot{width:10px;height:10px;border-radius:50%;background:#333;transition:background .2s}
+  .alarm-toggle.on .toggle-dot{background:#00ff9d;box-shadow:0 0 8px #00ff9d}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#00ff9d;color:#000;padding:10px 20px;border-radius:10px;font-size:12px;font-weight:700;letter-spacing:1px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="subtitle" id="dateLabel"></div>
+      <div class="title">Schedule</div>
+    </div>
+    <div class="streak-box">
+      <div class="streak-num" id="streakNum">0</div>
+      <div class="streak-label">STREAK</div>
+    </div>
+  </div>
+  <div class="progress-track" style="margin-top:16px">
+    <div class="progress-row" style="position:static;margin-top:0">
+      <span>TODAY'S PROGRESS</span><span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="days-strip" id="daysStrip"></div>
+
+<div class="alarm-section">
+  <button class="alarm-toggle" id="alarmToggle" onclick="toggleAlarms()">
+    <span>🔔 ALARMS</span>
+    <div class="toggle-dot" id="alarmDot"></div>
+  </button>
+</div>
+
+<div class="tasks" id="taskList"></div>
+
+<div class="week-section">
+  <div class="section-label">WEEK OVERVIEW</div>
+  <div class="week-bars" id="weekBars"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const FULL_DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const CAT = {
+  study: {color:"#00ff9d", bg:"#00ff9d22", label:"STUDY"},
+  school: {color:"#00b4ff", bg:"#00b4ff22", label:"SCHOOL"},
+  life:   {color:"#ff6b6b", bg:"#ff6b6b22", label:"LIFE"},
+};
+
+let tasks = JSON.parse(localStorage.getItem("tasks") || "null") || [
+  {id:1, time:"06:00", label:"Wake up", category:"life"},
+  {id:2, time:"07:00", label:"NetworkChuck / study", category:"study"},
+  {id:3, time:"09:00", label:"School", category:"school"},
+  {id:4, time:"15:00", label:"Python / Sololearn", category:"study"},
+  {id:5, time:"17:00", label:"Break / Exercise", category:"life"},
+  {id:6, time:"20:00", label:"Evening study block", category:"study"},
+  {id:7, time:"22:30", label:"Sleep", category:"life"},
+];
+let completed = JSON.parse(localStorage.getItem("completed") || "{}");
+let streak = parseInt(localStorage.getItem("streak") || "0");
+let alarmsOn = localStorage.getItem("alarmsOn") === "true";
+let activeDay = new Date().getDay();
+let alarmTimers = [];
+let addCat = "study";
+
+const today = new Date().getDay();
+
+function save() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+  localStorage.setItem("completed", JSON.stringify(completed));
+  localStorage.setItem("streak", streak);
+  localStorage.setItem("alarmsOn", alarmsOn);
+}
+
+function getCurrentTime() {
+  const n = new Date();
+  return String(n.getHours()).padStart(2,"0") + ":" + String(n.getMinutes()).padStart(2,"0");
+}
+
+function dayProgress(day) {
+  if (!tasks.length) return 0;
+  const done = tasks.filter(t => completed[`${day}-${t.id}`]).length;
+  return Math.round((done / tasks.length) * 100);
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 150, 300].forEach(delay => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880;
+      o.type = "sine";
+      g.gain.setValueAtTime(0.3, ctx.currentTime + delay/1000);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay/1000 + 0.4);
+      o.start(ctx.currentTime + delay/1000);
+      o.stop(ctx.currentTime + delay/1000 + 0.4);
+    });
+  } catch(e) {}
+}
+
+function scheduleAlarms() {
+  alarmTimers.forEach(clearTimeout);
+  alarmTimers = [];
+  if (!alarmsOn) return;
+  const now = new Date();
+  tasks.forEach(task => {
+    const [h, m] = task.time.split(":").map(Number);
+    const alarmTime = new Date();
+    alarmTime.setHours(h, m, 0, 0);
+    const diff = alarmTime - now;
+    if (diff > 0) {
+      const t = setTimeout(() => {
+        playBeep();
+        showToast(`⏰ ${task.time} — ${task.label}`);
+        if (Notification.permission === "granted") {
+          new Notification("Schedule", { body: `Time for: ${task.label}`, icon: "" });
+        }
+      }, diff);
+      alarmTimers.push(t);
+    }
+  });
+}
+
+function toggleAlarms() {
+  alarmsOn = !alarmsOn;
+  save();
+  updateAlarmUI();
+  if (alarmsOn) {
+    Notification.requestPermission().then(() => scheduleAlarms());
+    showToast("Alarms ON ✓");
+  } else {
+    alarmTimers.forEach(clearTimeout);
+    alarmTimers = [];
+    showToast("Alarms OFF");
+  }
+}
+
+function updateAlarmUI() {
+  const btn = document.getElementById("alarmToggle");
+  btn.classList.toggle("on", alarmsOn);
+}
+
+function toggleTask(id) {
+  const key = `${activeDay}-${id}`;
+  completed[key] = !completed[key];
+  save();
+  render();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  save();
+  scheduleAlarms();
+  render();
+}
+
+function setActiveDay(day) {
+  activeDay = day;
+  render();
+}
+
+function render() {
+  // Date label
+  const now = new Date();
+  document.getElementById("dateLabel").textContent =
+    `${FULL_DAYS[today]} · ${getCurrentTime()}`;
+
+  // Streak
+  document.getElementById("streakNum").textContent = streak;
+
+  // Progress
+  const prog = dayProgress(activeDay);
+  document.getElementById("progressPct").textContent = prog + "%";
+  document.getElementById("progressFill").style.width = prog + "%";
+
+  // Days strip
+  const strip = document.getElementById("daysStrip");
+  strip.innerHTML = DAYS.map((d, i) => {
+    const p = dayProgress(i);
+    return `<button class="day-btn${activeDay===i?" active":""}${today===i?" today-btn":""}" onclick="setActiveDay(${i})">
+      <div style="font-weight:700">${d}</div>
+      <div class="day-dot${p>0?" has-progress":""}" style="opacity:${p/100+0.1}"></div>
+    </button>`;
+  }).join("");
+
+  // Task list
+  const currentTime = getCurrentTime();
+  const list = document.getElementById("taskList");
+  let html = tasks.map((task, idx) => {
+    const key = `${activeDay}-${task.id}`;
+    const done = completed[key];
+    const cat = CAT[task.category] || CAT.study;
+    const next = tasks[idx + 1];
+    const isCurrent = activeDay === today && task.time <= currentTime && (!next || next.time > currentTime);
+    return `<div class="task-item${isCurrent?" current":""}${done?" done":""}"
+      style="--cat-color:${cat.color};--cat-color-bg:${cat.bg};${isCurrent?`background:${cat.bg};`:""}">
+      ${isCurrent ? `<div class="now-badge" style="background:${cat.color}">NOW</div>` : ""}
+      <button class="check-btn${done?" checked":""}" onclick="toggleTask(${task.id})"
+        style="--cat-color:${cat.color}">
+        <span class="check-icon">✓</span>
+      </button>
+      <div style="flex:1">
+        <div class="task-label">${task.label}</div>
+        <div class="task-time">${task.time}</div>
+      </div>
+      <div class="cat-badge" style="--cat-color:${cat.color}">${cat.label}</div>
+      <button class="del-btn" onclick="deleteTask(${task.id})">×</button>
+    </div>`;
+  }).join("");
+
+  // Add form
+  html += `<div id="addArea"></div>`;
+  list.innerHTML = html;
+
+  document.getElementById("addArea").innerHTML = `
+    <div id="addFormWrap"></div>
+    <button class="add-trigger" onclick="showAddForm()">+ ADD TASK</button>
+  `;
+
+  // Week bars
+  const bars = document.getElementById("weekBars");
+  bars.innerHTML = DAYS.map((d, i) => {
+    const p = dayProgress(i);
+    return `<div class="week-col${activeDay===i?" active":""}" onclick="setActiveDay(${i})">
+      <div class="week-bar">
+        <div class="week-fill" style="height:${p}%"></div>
+        ${p > 0 ? `<div class="week-pct">${p}%</div>` : ""}
+      </div>
+      <div class="week-day-label">${d}</div>
+    </div>`;
+  }).join("");
+
+  updateAlarmUI();
+}
+
+function showAddForm() {
+  const wrap = document.getElementById("addFormWrap");
+  wrap.innerHTML = `
+    <div class="add-form">
+      <input type="time" id="newTime" placeholder="Time">
+      <input type="text" id="newLabel" placeholder="Task name" maxlength="40">
+      <div class="cat-row">
+        ${Object.entries(CAT).map(([k,v]) =>
+          `<button class="cat-btn${addCat===k?" selected":""}" onclick="selectCat('${k}')"
+            style="--cat-color:${v.color};--cat-color-bg:${v.bg}">${v.label}</button>`
+        ).join("")}
+      </div>
+      <div class="form-btns">
+        <button class="add-confirm" onclick="confirmAdd()">ADD</button>
+        <button class="add-cancel" onclick="render()">CANCEL</button>
+      </div>
+    </div>
+  `;
+  document.querySelector(".add-trigger").style.display = "none";
+}
+
+function selectCat(cat) {
+  addCat = cat;
+  showAddForm();
+}
+
+function confirmAdd() {
+  const time = document.getElementById("newTime").value;
+  const label = document.getElementById("newLabel").value.trim();
+  if (!time || !label) { showToast("Fill in both fields!"); return; }
+  tasks.push({id: Date.now(), time, label, category: addCat});
+  tasks.sort((a,b) => a.time.localeCompare(b.time));
+  save();
+  scheduleAlarms();
+  render();
+  showToast("Task added ✓");
+}
+
+// Tick clock every minute
+setInterval(() => {
+  document.getElementById("dateLabel").textContent =
+    `${FULL_DAYS[today]} · ${getCurrentTime()}`;
+}, 60000);
+
+// Init
+if (alarmsOn) scheduleAlarms();
+render();
+</script>
+</body>
+</html>
